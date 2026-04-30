@@ -70,13 +70,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }} 
           script: |
-            # 1. Force remove the old container
             echo "${{ secrets.SERVER_PASSWORD }}" | sudo -S docker rm -f my-app || true
-            
-            # 2. Delete the old image to force a fresh download
             echo "${{ secrets.SERVER_PASSWORD }}" | sudo -S docker rmi ghcr.io/${{ github.repository }}:latest || true
-            
-            # 3. Pull and start the brand new container
             echo "${{ secrets.SERVER_PASSWORD }}" | sudo -S docker run -d --name my-app -p 80:5000 ghcr.io/${{ github.repository }}:latest
-            
-            echo "Deployed successfully with sudo!"
