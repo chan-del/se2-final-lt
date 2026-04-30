@@ -1,55 +1,41 @@
-# This file tells GitHub: "Every time someone pushes code, do these things."
+name: CI Pipeline
 
-name: CI Pipeline           # The name you'll see in the GitHub Actions tab
-
-# WHEN should this run?
 on:
-  push:                     # Run when code is pushed...
-    branches: [main]        # ...to the main branch
-  pull_request:             # Also run on pull requests
+  push:
+    branches: [main]
+  pull_request:
     branches: [main]
 
-# WHAT should it do?
 jobs:
   check-code:
     name: Lint and Test
-    runs-on: ubuntu-latest  # Use a Linux machine provided by GitHub
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Download your code onto the runner
       - name: Get the code
         uses: actions/checkout@v4
 
-      # Step 2: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # Step 3: Install your packages (pip install)
       - name: Install dependencies
         run: |
-         pip install -r requirements.txt
-         pip install flake8 pytest
+          pip install -r requirements.txt
+          pip install flake8 pytest
 
-      # # Step 4: Check code style
-      # - name: Check code style (lint)
-        # run: flake8 app/
-
-      # Step 5: Run tests
       - name: Run tests
         run: |
-         export PYTHONPATH=$PYTHONPATH:$(pwd)
-         pytest tests/
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest tests/
 
-  # This job runs AFTER "check-code" passes
   build-docker:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     needs: check-code
-    if: github.event_name == 'push'  # Only build on push, not on PRs
+    if: github.event_name == 'push'
 
-    # Give this job permission to push images
     permissions:
       contents: read
       packages: write
@@ -58,15 +44,13 @@ jobs:
       - name: Get the code
         uses: actions/checkout@v4
 
-      # Log in to GitHub's container registry
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}          # Your GitHub username
-          password: ${{ secrets.GITHUB_TOKEN }}  # Auto-provided by GitHub
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build and push the image
       - name: Build and push
         run: |
           docker build -t ghcr.io/${{ github.repository }}:latest .
@@ -86,7 +70,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }} 
           script: |
-            # 1. Force remove the old container s
+            # 1. Force remove the old container
             echo "${{ secrets.SERVER_PASSWORD }}" | sudo -S docker rm -f my-app || true
             
             # 2. Delete the old image to force a fresh download
